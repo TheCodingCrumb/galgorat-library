@@ -1,0 +1,9 @@
+.nuxt
+.output
+.data
+node_modules
+dist
+coverage
+public/book-pages.json
+playwright-report
+test-results

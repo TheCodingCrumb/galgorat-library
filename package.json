@@ -1,0 +1,36 @@
+{
+  "name": "galgorat-library",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "dev": "npm run generate && npm run preview",
+    "dev:nuxt": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "serve .output/public -l 3000",
+    "paginate": "node scripts/paginate.mjs",
+    "prebuild": "npm run paginate",
+    "pregenerate": "npm run paginate",
+    "test": "vitest run tests/content-loader.test.mjs tests/generated-book.test.mjs tests/book-reader.test.ts",
+    "test:visual": "playwright test"
+  },
+  "dependencies": {
+    "@nuxt/content": "^3.7.1",
+    "better-sqlite3": "^12.10.0",
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^14.1.0",
+    "nuxt": "^3.17.7",
+    "playwright": "^1.53.2",
+    "vue": "^3.5.17"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.2",
+    "@types/markdown-it": "^14.1.2",
+    "serve": "^14.2.6",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
