@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import MarkdownIt from 'markdown-it'
 import { chromium } from 'playwright'
-import { loadChapters } from './content-loader.mjs'
+import { loadBooks, loadChapters } from './content-loader.mjs'
 
 const PAGE_WIDTH = '148mm'
 const PAGE_HEIGHT = '210mm'
@@ -280,37 +280,72 @@ async function paginateChapter(measurer, chapter, startPageNumber, warnings) {
   return pages
 }
 
-async function main() {
-  const chapters = await loadChapters()
-  const measurer = await createMeasurer()
+async function paginateBook(measurer, book) {
+  const chapters = await loadChapters(book.chaptersDir)
   const warnings = []
   const pages = []
 
-  try {
-    for (const chapter of chapters) {
-      const chapterPages = await paginateChapter(measurer, chapter, pages.length + 1, warnings)
-      pages.push(...chapterPages)
-    }
-  } finally {
-    await measurer.browser.close()
+  for (const chapter of chapters) {
+    const chapterPages = await paginateChapter(measurer, chapter, pages.length + 1, warnings)
+    pages.push(...chapterPages)
   }
 
-  await fs.mkdir('public', { recursive: true })
-  await fs.writeFile('public/book-pages.json', `${JSON.stringify({
+  return {
     generatedAt: new Date().toISOString(),
     pageSize: 'A5',
     pagePixels: {
       width: CONTENT_WIDTH_PX,
       height: CONTENT_HEIGHT_PX
     },
+    book: {
+      slug: book.slug,
+      title: book.title,
+      cover: book.cover,
+      description: book.description
+    },
     pages,
     warnings
-  }, null, 2)}\n`)
-
-  for (const warning of warnings) {
-    console.warn(`WARN ${warning}`)
   }
-  console.log(`Paginated ${chapters.length} chapters into ${pages.length} pages`)
+}
+
+async function main() {
+  const books = await loadBooks()
+  const measurer = await createMeasurer()
+  const catalog = []
+
+  try {
+    await fs.mkdir('public/books', { recursive: true })
+
+    for (const book of books) {
+      const payload = await paginateBook(measurer, book)
+      const bookOutputDir = `public/books/${book.slug}`
+
+      await fs.mkdir(bookOutputDir, { recursive: true })
+      await fs.writeFile(`${bookOutputDir}/book-pages.json`, `${JSON.stringify(payload, null, 2)}\n`)
+
+      catalog.push({
+        slug: book.slug,
+        title: book.title,
+        cover: book.cover,
+        description: book.description,
+        pageCount: payload.pages.length
+      })
+
+      for (const warning of payload.warnings) {
+        console.warn(`WARN ${warning}`)
+      }
+      console.log(`Paginated ${book.slug}: ${payload.pages.length} pages`)
+    }
+  } finally {
+    await measurer.browser.close()
+  }
+
+  await fs.mkdir('public', { recursive: true })
+  await fs.writeFile('public/books.json', `${JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    books: catalog
+  }, null, 2)}\n`)
+  console.log(`Generated catalog with ${catalog.length} books`)
 }
 
 main().catch((error) => {

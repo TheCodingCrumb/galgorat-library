@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-06-08T19:53:53.703Z",
+  "books": [
+    {
+      "slug": "galgorat",
+      "title": "Galgorat Library",
+      "cover": "/covers/galgorat.svg",
+      "description": "Fragments d'archive, cartes fendues et serments perdus.",
+      "pageCount": 5
+    }
+  ]
+}

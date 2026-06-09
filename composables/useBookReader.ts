@@ -14,6 +14,12 @@ export interface BookPayload {
     width: number
     height: number
   }
+  book?: {
+    slug: string
+    title: string
+    cover: string
+    description: string
+  }
   pages: BookPage[]
   warnings: string[]
 }

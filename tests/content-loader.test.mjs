@@ -2,7 +2,19 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { loadChapters, mapChaptersToPages } from '../scripts/content-loader.mjs'
+import { loadBooks, loadChapters, mapChaptersToPages } from '../scripts/content-loader.mjs'
+
+async function makeBookRoot(books) {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'galgorat-books-'))
+
+  await Promise.all(Object.entries(books).map(async ([slug, manifest]) => {
+    const bookDir = path.join(root, slug)
+    await fs.mkdir(path.join(bookDir, 'chapters'), { recursive: true })
+    await fs.writeFile(path.join(bookDir, 'book.json'), JSON.stringify(manifest))
+  }))
+
+  return root
+}
 
 async function makeChapterDir(files) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'galgorat-content-'))
@@ -43,6 +55,31 @@ describe('loadChapters', () => {
     })
 
     await expect(loadChapters(chapterDir)).rejects.toThrow('Duplicate chapter order')
+  })
+})
+
+describe('loadBooks', () => {
+  it('sorts books by manifest order', async () => {
+    const bookRoot = await makeBookRoot({
+      beta: { title: 'Beta', cover: '/covers/beta.svg', order: 2 },
+      alpha: { title: 'Alpha', cover: '/covers/alpha.svg', order: 1 }
+    })
+
+    const books = await loadBooks(bookRoot)
+
+    expect(books.map((book) => book.slug)).toEqual(['alpha', 'beta'])
+    expect(books[0]).toMatchObject({
+      title: 'Alpha',
+      chaptersDir: path.join(bookRoot, 'alpha', 'chapters')
+    })
+  })
+
+  it('rejects books without cover metadata', async () => {
+    const bookRoot = await makeBookRoot({
+      broken: { title: 'Broken', order: 1 }
+    })
+
+    await expect(loadBooks(bookRoot)).rejects.toThrow('cover required')
   })
 })
 

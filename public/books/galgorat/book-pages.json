@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-06-08T19:53:53.680Z",
+  "pageSize": "A5",
+  "pagePixels": {
+    "width": 424,
+    "height": 674
+  },
+  "book": {
+    "slug": "galgorat",
+    "title": "Galgorat Library",
+    "cover": "/covers/galgorat.svg",
+    "description": "Fragments d'archive, cartes fendues et serments perdus."
+  },
+  "pages": [
+    {
+      "pageNumber": 1,
+      "chapterTitle": "Ouverture",
+      "chapterOrder": 1,
+      "html": "<h1>Ouverture</h1><p>Galgorat ouvrit les yeux devant les rayonnages froids. Chaque tablette portait une poussiere fine, presque argentee, et chaque dos de livre semblait attendre un nom.</p><p>Il avanca sans torche. La salle n’avait pas besoin de feu. Les phrases anciennes luisaient seules, ligne apres ligne, comme des braises sous papier.</p><blockquote><p>Celui qui lit sans choisir donne son souffle au premier livre venu.</p></blockquote><p>Alors Galgorat choisit. Il prit le volume le plus mince, celui qui n’avait ni titre ni sceau, et la premiere page tourna avant que ses doigts ne la touchent.</p><h2>Note de marge</h2><ul><li>Les chapitres commencent toujours sur nouvelle page.</li></ul><ul><li>Les longues pages restent coupees au build.</li></ul><ul><li>Le lecteur ne recalcule rien.</li></ul>"
+    },
+    {
+      "pageNumber": 2,
+      "chapterTitle": "L'archive basse",
+      "chapterOrder": 2,
+      "html": "<h1>L’archive basse</h1><p>Sous la bibliotheque, un second lieu dormait. Les marches descendaient trop longtemps. A chaque palier, Galgorat trouvait la meme marque gravee dans la pierre: un cercle ouvert, une clef sans dents.</p><p>Il compta quarante-sept portes avant de comprendre. L’archive ne gardait pas les livres termines. Elle gardait les versions abandonnees, les chapitres refuses, les fins que personne n’avait ose prononcer.</p><pre><code class=\"language-txt\">registre: basalte\nentree: non classee\nrisque: lecture recursive\nordre: ne pas corriger les marges rouges</code></pre><p>La derniere porte cedait deja.</p>"
+    },
+    {
+      "pageNumber": 3,
+      "chapterTitle": "La carte fendue",
+      "chapterOrder": 3,
+      "html": "<h1>La carte fendue</h1><p>Galgorat posa la carte sur le pupitre. Le cuir etait craquele. Les encres avaient bu trop de nuits, mais les routes tenaient encore comme des veines sous la peau.</p><p>Au nord, une tour sans ombre portait trois marques de charbon. A l’ouest, un marais etait barre d’une phrase: ne pas croire les lanternes basses.</p><p>Il ajouta sa propre note avec une plume courte.</p><blockquote><p>Si la carte ment, suivre la tache. Les taches ne savent pas mentir.</p></blockquote><p>Le papier fremit quand il souffla dessus. Une nouvelle ile apparut, petite, noire, impossible a atteindre par mer calme.</p>"
+    },
+    {
+      "pageNumber": 4,
+      "chapterTitle": "Le serment du passeur",
+      "chapterOrder": 4,
+      "html": "<h1>Le serment du passeur</h1><p>Le passeur attendait sans rame. Sa barque cognait contre la rive, lente et sourde, comme un coeur enferme dans une caisse.</p><p>Il demanda un souvenir, pas une piece. Galgorat donna le nom de son premier maitre. Le passeur hocha la tete, puis grava ce nom sous le banc avec un clou rouille.</p><pre><code class=\"language-txt\">prix: un souvenir net\ntrajet: rive basse vers rive noire\nrisque: retour sans visage connu\nnote: ne pas regarder sous l&#039;eau</code></pre><p>La traversee dura moins qu’un soupir et plus qu’une saison. Quand la barque toucha l’autre rive, Galgorat savait encore manier l’epee, mais plus dire qui lui avait appris.</p>"
+    },
+    {
+      "pageNumber": 5,
+      "chapterTitle": "L'encre des ruines",
+      "chapterOrder": 5,
+      "html": "<h1>L’encre des ruines</h1><p>Dans les ruines, chaque mur avait ete ecrit puis efface. Il ne restait que des boucles, des traits rageurs, des prieres sans dieu.</p><p>Galgorat frotta la pierre avec de l’eau noire. Les mots revinrent par plaques, trembles, comme si la salle reprenait son souffle.</p><ul><li>Premiere ligne: ouvrir seulement au matin.</li></ul><ul><li>Deuxieme ligne: briser la lampe si elle chante.</li></ul><ul><li>Troisieme ligne: partir avant que son nom soit lu.</li></ul><p>Il lut trop loin. Sous ses doigts, l’encre remonta dans les fissures, puis dans ses ongles.</p><p>La derniere phrase ne parlait pas de tresor. Elle parlait du lecteur.</p>"
+    }
+  ],
+  "warnings": []
+}

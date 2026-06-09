@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('renders A5 page and visible controls', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/books/galgorat')
 
   const papers = page.locator('.paper-page')
   await expect(papers).toHaveCount(1)
@@ -23,7 +23,7 @@ test('renders A5 page and visible controls', async ({ page }) => {
 
 test('desktop navigation opens a two-page journal spread', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
-  await page.goto('/')
+  await page.goto('/books/galgorat')
 
   await page.getByRole('button', { name: 'Page suivante' }).click()
 
@@ -52,7 +52,7 @@ test('desktop navigation opens a two-page journal spread', async ({ page }) => {
 
 test('mobile navigation keeps a single readable page', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/')
+  await page.goto('/books/galgorat')
 
   await page.getByRole('button', { name: 'Page suivante' }).click()
 
@@ -63,7 +63,7 @@ test('mobile navigation keeps a single readable page', async ({ page }) => {
 test('keyboard navigation and reduced motion keep reader usable', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.setViewportSize({ width: 1280, height: 900 })
-  await page.goto('/')
+  await page.goto('/books/galgorat')
 
   await page.keyboard.press('ArrowRight')
   await expect(page.locator('.paper-page')).toHaveCount(2)
@@ -72,4 +72,16 @@ test('keyboard navigation and reduced motion keep reader usable', async ({ page 
   await page.keyboard.press('ArrowLeft')
   await expect(page.locator('.paper-page')).toHaveCount(1)
   await expect(page.locator('.paper-page')).toContainText('Ouverture')
+})
+
+test('catalog links to the generated book route', async ({ page }) => {
+  await page.goto('/')
+
+  const book = page.getByRole('link', { name: /Ouvrir Galgorat Library/ })
+  await expect(book).toBeVisible()
+  await expect(book.locator('img')).toHaveAttribute('src', '/covers/galgorat.svg')
+
+  await book.click()
+  await expect(page).toHaveURL(/\/books\/galgorat$/)
+  await expect(page.locator('.paper-page')).toHaveCount(1)
 })

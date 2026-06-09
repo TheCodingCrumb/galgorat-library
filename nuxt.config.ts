@@ -1,3 +1,17 @@
+import { existsSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+
+function getBookRoutes() {
+  const booksDir = join(process.cwd(), 'content/books')
+  if (!existsSync(booksDir)) {
+    return []
+  }
+
+  return readdirSync(booksDir)
+    .filter((entry) => statSync(join(booksDir, entry)).isDirectory())
+    .map((slug) => `/books/${slug}`)
+}
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   modules: ['@nuxt/content'],
@@ -15,7 +29,7 @@ export default defineNuxtConfig({
   },
   nitro: {
     prerender: {
-      routes: ['/']
+      routes: ['/', ...getBookRoutes()]
     }
   },
   experimental: {
