@@ -17,12 +17,14 @@ let onSpreadMediaChange: ((event: MediaQueryListEvent) => void) | undefined
 const pages = computed(() => data.value?.pages ?? [])
 const bookTitle = computed(() => data.value?.book?.title ?? 'Livre')
 const {
+  currentIndex,
   currentPage,
   isSpreadMode,
   visiblePages,
   readerProgressLabel,
   canGoPrevious,
   canGoNext,
+  goToPage,
   goNext,
   goPrevious
 } = useBookReader(pages)
@@ -70,28 +72,13 @@ onBeforeUnmount(() => {
         Chargement.
       </div>
 
-      <div v-else
-        class="book-spread"
-        :class="{ 'book-spread--single': visiblePages.length === 1 }"
-      >
-        <article
-          v-for="visiblePage in visiblePages"
-          :key="visiblePage.key"
-          class="paper-page"
-          :class="[
-            `paper-page--${visiblePage.side}`,
-            { 'paper-page--blank': visiblePage.blank }
-          ]"
-          :aria-label="visiblePage.blank ? 'Page blanche' : `Page ${visiblePage.page?.pageNumber}`"
-        >
-          <div
-            v-if="visiblePage.page"
-            class="paper-content"
-            v-html="visiblePage.page.html"
-          />
-          <span v-else class="sr-only">Page blanche</span>
-        </article>
-      </div>
+      <BookPageFlip
+        v-else
+        :current-index="currentIndex"
+        :pages="pages"
+        :visible-pages="visiblePages"
+        @page-change="goToPage"
+      />
 
       <nav class="reader-nav" aria-label="Navigation pages">
         <button

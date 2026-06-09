@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('renders A5 page and visible controls', async ({ page }) => {
   await page.goto('/books/galgorat')
 
-  const papers = page.locator('.paper-page')
+  const papers = page.locator('.paper-page:visible')
   await expect(papers).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Page suivante' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Page precedente' })).toBeVisible()
@@ -27,7 +27,7 @@ test('desktop navigation opens a two-page journal spread', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Page suivante' }).click()
 
-  const papers = page.locator('.paper-page')
+  const papers = page.locator('.paper-page:visible')
   await expect(papers).toHaveCount(2)
   await expect(papers.first()).toContainText(/L.archive basse/)
   await expect(papers.nth(1)).toContainText('La carte fendue')
@@ -56,8 +56,8 @@ test('mobile navigation keeps a single readable page', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Page suivante' }).click()
 
-  await expect(page.locator('.paper-page')).toHaveCount(1)
-  await expect(page.locator('.paper-page')).toContainText(/L.archive basse/)
+  await expect(page.locator('.paper-page:visible')).toHaveCount(1)
+  await expect(page.locator('.paper-page:visible')).toContainText(/L.archive basse/)
 })
 
 test('keyboard navigation and reduced motion keep reader usable', async ({ page }) => {
@@ -66,12 +66,12 @@ test('keyboard navigation and reduced motion keep reader usable', async ({ page 
   await page.goto('/books/galgorat')
 
   await page.keyboard.press('ArrowRight')
-  await expect(page.locator('.paper-page')).toHaveCount(2)
-  await expect(page.locator('.paper-page').first()).toContainText(/L.archive basse/)
+  await expect(page.locator('.paper-page:visible')).toHaveCount(2)
+  await expect(page.locator('.paper-page:visible').first()).toContainText(/L.archive basse/)
 
   await page.keyboard.press('ArrowLeft')
-  await expect(page.locator('.paper-page')).toHaveCount(1)
-  await expect(page.locator('.paper-page')).toContainText('Ouverture')
+  await expect(page.locator('.paper-page:visible')).toHaveCount(1)
+  await expect(page.locator('.paper-page:visible')).toContainText('Ouverture')
 })
 
 test('catalog links to the generated book route', async ({ page }) => {
@@ -83,5 +83,5 @@ test('catalog links to the generated book route', async ({ page }) => {
 
   await book.click()
   await expect(page).toHaveURL(/\/books\/galgorat$/)
-  await expect(page.locator('.paper-page')).toHaveCount(1)
+  await expect(page.locator('.paper-page:visible')).toHaveCount(1)
 })

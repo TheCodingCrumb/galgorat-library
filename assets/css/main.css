@@ -239,6 +239,29 @@ a {
   display: none;
 }
 
+.book-flip {
+  position: relative;
+  width: min(100%, calc((var(--page-width) * 2) + var(--spread-gap)));
+  transform-style: preserve-3d;
+}
+
+.book-flip--single {
+  width: min(100%, var(--page-width));
+}
+
+.page-flip-mount,
+.page-flip-host {
+  width: 100%;
+}
+
+.page-flip-host {
+  margin: 0 auto;
+}
+
+.page-flip-host .stf__block {
+  overflow: visible;
+}
+
 .paper-page {
   position: relative;
   width: 100%;
@@ -291,6 +314,24 @@ a {
 }
 
 .paper-page--right {
+  border-radius: 2px 8px 7px 3px;
+  box-shadow:
+    8px 24px 52px rgba(0, 0, 0, 0.34),
+    inset 18px 0 24px rgba(66, 40, 21, 0.21),
+    inset 0 0 22px rgba(78, 45, 21, 0.13);
+}
+
+.paper-page.--left,
+.paper-page--flip.--left {
+  border-radius: 8px 2px 3px 7px;
+  box-shadow:
+    -8px 24px 52px rgba(0, 0, 0, 0.34),
+    inset -18px 0 24px rgba(66, 40, 21, 0.21),
+    inset 0 0 22px rgba(78, 45, 21, 0.13);
+}
+
+.paper-page.--right,
+.paper-page--flip.--right {
   border-radius: 2px 8px 7px 3px;
   box-shadow:
     8px 24px 52px rgba(0, 0, 0, 0.34),
@@ -477,6 +518,10 @@ a {
   .book-spread {
     width: min(100%, var(--page-width));
     grid-template-columns: minmax(0, var(--page-width));
+  }
+
+  .book-flip {
+    width: min(100%, var(--page-width));
   }
 
   .book-spread::before,

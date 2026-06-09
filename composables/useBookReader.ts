@@ -192,6 +192,7 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
     readerProgressLabel,
     canGoPrevious,
     canGoNext,
+    goToPage,
     goNext,
     goPrevious
   }
