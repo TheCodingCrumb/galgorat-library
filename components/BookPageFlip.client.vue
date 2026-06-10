@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import type { BookPage, VisiblePage } from '~/composables/useBookReader'
+import type { BookCoverConfig, BookPage, VisiblePage } from '~/composables/useBookReader'
+import {
+  contentIndexToPageFlipIndex,
+  getPhysicalBookPages,
+  physicalIndexToContentIndex,
+  physicalIndexToCoverState,
+  type CoverState,
+  type PhysicalBookPage
+} from '~/composables/usePhysicalBookPages'
 
 interface PageFlipEvent {
   data: number | string | boolean | object | null
@@ -12,6 +20,7 @@ interface PageFlipInstance {
   getCurrentPageIndex: () => number
   loadFromHTML: (items: HTMLElement[]) => void
   on: (eventName: string, callback: (event: PageFlipEvent) => void) => PageFlipInstance
+  turnToPage: (page: number) => void
   update: () => void
 }
 
@@ -21,13 +30,17 @@ type PageFlipConstructor = new (
 ) => PageFlipInstance
 
 const props = defineProps<{
+  bookCover?: string | BookCoverConfig
+  bookTitle: string
+  coverState: CoverState | null
   currentIndex: number
+  isSpreadMode: boolean
   pages: readonly BookPage[]
   visiblePages: readonly VisiblePage[]
 }>()
 
 const emit = defineEmits<{
-  pageChange: [index: number]
+  pageChange: [index: number | null, coverState?: CoverState | null]
 }>()
 
 const flipMount = ref<HTMLElement>()
@@ -38,9 +51,48 @@ let motionMediaQuery: MediaQueryList | undefined
 let onMotionMediaChange: ((event: MediaQueryListEvent) => void) | undefined
 
 const isSingleLayout = computed(() => props.visiblePages.length === 1)
+const isCoverLayout = computed(() => props.coverState !== null)
 const pageSignature = computed(() => props.pages
   .map((page) => `${page.pageNumber}:${page.chapterTitle}:${page.html.length}`)
+  .concat(
+    props.isSpreadMode ? 'spread' : 'portrait',
+    props.bookTitle,
+    JSON.stringify(props.bookCover ?? null)
+  )
   .join('|'))
+const physicalPages = computed(() => getPhysicalBookPages(props.pages))
+const targetPhysicalIndex = computed(() => {
+  if (props.coverState === 'front') {
+    return 0
+  }
+
+  if (props.coverState === 'back') {
+    return 2 + props.pages.length + (props.pages.length % 2 === 1 ? 1 : 0)
+  }
+
+  return contentIndexToPageFlipIndex(props.currentIndex, props.isSpreadMode)
+})
+const coverConfig = computed<BookCoverConfig>(() => {
+  if (typeof props.bookCover === 'string') {
+    return { image: props.bookCover }
+  }
+
+  return props.bookCover ?? {}
+})
+
+function getCoverImage(kind: 'front' | 'back') {
+  return kind === 'front'
+    ? coverConfig.value.frontImage ?? coverConfig.value.image
+    : coverConfig.value.backImage
+}
+
+function getCoverStyle() {
+  return {
+    '--cover-bg': coverConfig.value.background ?? '#74351f',
+    '--cover-fg': coverConfig.value.foreground ?? '#f6efe4',
+    '--cover-accent': coverConfig.value.accent ?? '#d8b36a'
+  }
+}
 
 function createPageElement(page: BookPage) {
   const article = document.createElement('article')
@@ -55,28 +107,85 @@ function createPageElement(page: BookPage) {
   return article
 }
 
-function createBlankPageElement(lastPageNumber: number) {
+function createCoverPageElement(kind: 'front-cover' | 'back-cover') {
+  const coverKind = kind === 'front-cover' ? 'front' : 'back'
+  const image = getCoverImage(coverKind)
   const article = document.createElement('article')
-  article.className = 'paper-page paper-page--flip paper-page--blank'
-  article.setAttribute('aria-label', 'Page blanche')
-  article.dataset.blank = 'true'
+  article.className = `paper-page paper-page--flip paper-page--cover paper-page--${kind}`
+  article.setAttribute(
+    'aria-label',
+    kind === 'front-cover'
+      ? `Couverture ${props.bookTitle}`
+      : `Quatrieme de couverture ${props.bookTitle}`
+  )
+  Object.assign(article.style, getCoverStyle())
+
+  if (image) {
+    const coverImage = document.createElement('img')
+    coverImage.className = 'paper-cover-image'
+    coverImage.src = image
+    coverImage.alt = ''
+    article.appendChild(coverImage)
+  } else {
+    const title = document.createElement('strong')
+    title.className = 'paper-cover-title'
+    title.textContent = coverConfig.value.title ?? props.bookTitle
+    article.appendChild(title)
+
+    const subtitle = coverConfig.value.subtitle
+    if (subtitle) {
+      const subtitleElement = document.createElement('span')
+      subtitleElement.className = 'paper-cover-subtitle'
+      subtitleElement.textContent = subtitle
+      article.appendChild(subtitleElement)
+    }
+  }
+
+  return article
+}
+
+function createBlankPageElement(kind: 'inside-front' | 'blank-after-content' | 'inside-back') {
+  const article = document.createElement('article')
+  article.className = [
+    'paper-page',
+    'paper-page--flip',
+    'paper-page--blank',
+    kind === 'inside-front' || kind === 'inside-back'
+      ? 'paper-page--inside-cover'
+      : 'paper-page--blank-content'
+  ].join(' ')
+  article.setAttribute(
+    'aria-label',
+    kind === 'inside-front'
+      ? 'Interieur couverture avant'
+      : kind === 'inside-back'
+        ? 'Interieur couverture arriere'
+        : 'Page blanche'
+  )
+  article.dataset.blank = kind
 
   const label = document.createElement('span')
   label.className = 'sr-only'
-  label.textContent = `Page blanche apres page ${lastPageNumber}`
+  label.textContent = article.getAttribute('aria-label') ?? 'Page blanche'
 
   article.appendChild(label)
   return article
 }
 
-function getFlipPages() {
-  const pages = props.pages.map(createPageElement)
-
-  if (pages.length > 1 && pages.length % 2 === 0) {
-    pages.push(createBlankPageElement(props.pages[props.pages.length - 1].pageNumber))
+function createPhysicalPageElement(physicalPage: PhysicalBookPage) {
+  if (physicalPage.kind === 'content' && physicalPage.page) {
+    return createPageElement(physicalPage.page)
   }
 
-  return pages
+  if (physicalPage.kind === 'front-cover' || physicalPage.kind === 'back-cover') {
+    return createCoverPageElement(physicalPage.kind)
+  }
+
+  return createBlankPageElement(physicalPage.kind)
+}
+
+function getFlipPages() {
+  return physicalPages.value.map(createPhysicalPageElement)
 }
 
 function destroyFlip() {
@@ -110,7 +219,7 @@ async function mountFlip() {
     maxWidth: 560,
     minHeight: 398,
     maxHeight: 795,
-    startPage: props.currentIndex,
+    startPage: targetPhysicalIndex.value,
     drawShadow: true,
     flippingTime: 720,
     usePortrait: true,
@@ -127,10 +236,29 @@ async function mountFlip() {
   })
 
   instance.on('flip', (event) => {
-    const nextIndex = Number(event.data)
+    const physicalIndex = Number(event.data)
 
-    if (Number.isInteger(nextIndex)) {
-      emit('pageChange', nextIndex)
+    if (Number.isInteger(physicalIndex)) {
+      const nextCoverState = physicalIndexToCoverState(
+        physicalIndex,
+        props.pages.length,
+        props.isSpreadMode
+      )
+
+      if (nextCoverState) {
+        emit('pageChange', null, nextCoverState)
+        return
+      }
+
+      const contentIndex = physicalIndexToContentIndex(
+        physicalIndex,
+        props.pages.length,
+        props.isSpreadMode
+      )
+
+      if (contentIndex !== null) {
+        emit('pageChange', contentIndex)
+      }
     }
   })
 
@@ -148,8 +276,28 @@ async function syncCurrentPage() {
 
   instance.update()
 
-  if (instance.getCurrentPageIndex() !== props.currentIndex) {
-    instance.flip(props.currentIndex, 'top')
+  const currentPhysicalIndex = instance.getCurrentPageIndex()
+  const currentCoverState = physicalIndexToCoverState(
+    currentPhysicalIndex,
+    props.pages.length,
+    props.isSpreadMode
+  )
+  const currentContentIndex = physicalIndexToContentIndex(
+    currentPhysicalIndex,
+    props.pages.length,
+    props.isSpreadMode
+  )
+
+  if (
+    currentCoverState !== props.coverState
+    || (!props.coverState && currentContentIndex !== props.currentIndex)
+  ) {
+    if (!props.isSpreadMode && Math.abs(currentPhysicalIndex - targetPhysicalIndex.value) > 1) {
+      instance.turnToPage(targetPhysicalIndex.value)
+      return
+    }
+
+    instance.flip(targetPhysicalIndex.value, 'top')
   }
 }
 
@@ -191,6 +339,10 @@ watch(() => props.currentIndex, () => {
   void syncCurrentPage()
 })
 
+watch(() => props.coverState, () => {
+  void syncCurrentPage()
+})
+
 </script>
 
 <template>
@@ -200,28 +352,52 @@ watch(() => props.currentIndex, () => {
     :class="{ 'book-spread--single': visiblePages.length === 1 }"
   >
     <article
-      v-for="visiblePage in visiblePages"
-      :key="visiblePage.key"
-      class="paper-page"
-      :class="[
-        `paper-page--${visiblePage.side}`,
-        { 'paper-page--blank': visiblePage.blank }
-      ]"
-      :aria-label="visiblePage.blank ? 'Page blanche' : `Page ${visiblePage.page?.pageNumber}`"
+      v-if="coverState === 'front'"
+      class="paper-page paper-page--cover paper-page--front-cover"
+      :style="getCoverStyle()"
+      :aria-label="`Couverture ${bookTitle}`"
     >
-      <div
-        v-if="visiblePage.page"
-        class="paper-content"
-        v-html="visiblePage.page.html"
-      />
-      <span v-else class="sr-only">Page blanche</span>
+      <img
+        v-if="getCoverImage('front')"
+        class="paper-cover-image"
+        :src="getCoverImage('front')"
+        alt=""
+      >
+      <template v-else>
+        <strong class="paper-cover-title">{{ coverConfig.title ?? bookTitle }}</strong>
+        <span v-if="coverConfig.subtitle" class="paper-cover-subtitle">
+          {{ coverConfig.subtitle }}
+        </span>
+      </template>
     </article>
+    <template v-else>
+      <article
+        v-for="visiblePage in visiblePages"
+        :key="visiblePage.key"
+        class="paper-page"
+        :class="[
+          `paper-page--${visiblePage.side}`,
+          { 'paper-page--blank': visiblePage.blank }
+        ]"
+        :aria-label="visiblePage.blank ? 'Page blanche' : `Page ${visiblePage.page?.pageNumber}`"
+      >
+        <div
+          v-if="visiblePage.page"
+          class="paper-content"
+          v-html="visiblePage.page.html"
+        />
+        <span v-else class="sr-only">Page blanche</span>
+      </article>
+    </template>
   </div>
 
   <div
     v-else
     class="book-flip"
-    :class="{ 'book-flip--single': isSingleLayout }"
+    :class="{
+      'book-flip--single': isSingleLayout,
+      'book-flip--cover-state': isCoverLayout
+    }"
   >
     <div ref="flipMount" class="page-flip-mount" />
   </div>

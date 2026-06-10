@@ -6,6 +6,13 @@ import {
   useBookReader,
   type BookPage
 } from '../composables/useBookReader'
+import {
+  contentIndexToPageFlipIndex,
+  contentIndexToPhysicalIndex,
+  getPhysicalBookPages,
+  physicalIndexToContentIndex,
+  physicalIndexToCoverState
+} from '../composables/usePhysicalBookPages'
 
 const bookPages: BookPage[] = [
   { pageNumber: 1, chapterTitle: 'One', chapterOrder: 1, html: '<p>One</p>' },
@@ -40,9 +47,24 @@ describe('getVisiblePagesForIndex', () => {
 })
 
 describe('useBookReader', () => {
+  it('starts on the cover without a progress label', () => {
+    const pages = ref(bookPages)
+    const reader = useBookReader(computed(() => pages.value))
+
+    expect(reader.coverState.value).toBe('front')
+    expect(reader.readerProgressLabel.value).toBe('')
+    expect(reader.canGoPrevious.value).toBe(false)
+    expect(reader.canGoNext.value).toBe(true)
+  })
+
   it('moves by one page on mobile and by spreads on desktop', async () => {
     const pages = ref(bookPages)
     const reader = useBookReader(computed(() => pages.value))
+
+    reader.goNext()
+    expect(reader.coverState.value).toBeNull()
+    expect(reader.currentPage.value).toEqual(bookPages[0])
+    expect(reader.readerProgressLabel.value).toBe('Page 1 sur 3')
 
     reader.goNext()
     expect(reader.currentPage.value).toEqual(bookPages[1])
@@ -62,6 +84,7 @@ describe('useBookReader', () => {
 
     reader.goNext()
     reader.goNext()
+    reader.goNext()
     expect(reader.currentPage.value).toEqual(bookPages[2])
 
     pages.value = []
@@ -70,5 +93,54 @@ describe('useBookReader', () => {
     expect(reader.currentIndex.value).toBe(0)
     expect(reader.currentPage.value).toBeUndefined()
     expect(reader.readerProgressLabel.value).toBe('Journal sans page chargee')
+  })
+})
+
+describe('physical book pages', () => {
+  it('creates cover, content, padding, and back-cover physical pages', () => {
+    expect(getPhysicalBookPages(bookPages).map((page) => page.kind)).toEqual([
+      'front-cover',
+      'inside-front',
+      'content',
+      'content',
+      'content',
+      'blank-after-content',
+      'inside-back',
+      'back-cover'
+    ])
+
+    expect(getPhysicalBookPages(bookPages.slice(0, 2)).map((page) => page.kind)).toEqual([
+      'front-cover',
+      'inside-front',
+      'content',
+      'content',
+      'inside-back',
+      'back-cover'
+    ])
+  })
+
+  it('maps content indexes separately from physical page indexes', () => {
+    expect([0, 1, 2].map((index) => contentIndexToPhysicalIndex(index)))
+      .toEqual([2, 3, 4])
+    expect([0, 1, 2].map((index) => contentIndexToPageFlipIndex(index, true)))
+      .toEqual([1, 3, 3])
+    expect([0, 1, 2].map((index) => contentIndexToPageFlipIndex(index, false)))
+      .toEqual([2, 3, 4])
+
+    expect([0, 1, 2, 3, 4, 5, 6, 7].map((index) => physicalIndexToContentIndex(
+      index,
+      bookPages.length,
+      true
+    )))
+      .toEqual([null, 0, 0, 1, 2, null, null, null])
+  })
+
+  it('identifies cover physical states without counting them as content', () => {
+    expect(physicalIndexToCoverState(0, bookPages.length, true)).toBe('front')
+    expect(physicalIndexToCoverState(1, bookPages.length, true)).toBeNull()
+    expect(physicalIndexToCoverState(1, bookPages.length, false)).toBe('front')
+    expect(physicalIndexToCoverState(5, bookPages.length, true)).toBe('back')
+    expect(physicalIndexToCoverState(6, bookPages.length, true)).toBe('back')
+    expect(physicalIndexToCoverState(7, bookPages.length, true)).toBe('back')
   })
 })

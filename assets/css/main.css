@@ -246,7 +246,7 @@ a {
 }
 
 .book-flip--single {
-  width: min(100%, var(--page-width));
+  width: min(100%, calc((var(--page-width) * 2) + var(--spread-gap)));
 }
 
 .page-flip-mount,
@@ -357,6 +357,71 @@ a {
   font-size: clamp(10px, 1vw, 13px);
   line-height: 1.52;
   text-shadow: 0.2px 0.2px 0 rgba(46, 31, 20, 0.18);
+}
+
+.paper-page--cover {
+  display: grid;
+  place-items: center;
+  gap: 14px;
+  padding: 22mm 14mm;
+  color: var(--cover-fg, #f6efe4);
+  text-align: center;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.24), transparent 16%, transparent 82%, rgba(255, 255, 255, 0.08)),
+    linear-gradient(160deg, var(--cover-bg, #74351f), #2f2018);
+  border-color: rgba(216, 179, 106, 0.52);
+  border-radius: 3px 10px 8px 3px;
+  box-shadow:
+    0 26px 56px rgba(0, 0, 0, 0.52),
+    inset 0 0 0 2px rgba(216, 179, 106, 0.22),
+    inset 16px 0 24px rgba(0, 0, 0, 0.24);
+}
+
+.paper-page--cover::after {
+  inset: 10mm;
+  border-color: color-mix(in srgb, var(--cover-accent, #d8b36a) 62%, transparent);
+  border-radius: 3px;
+}
+
+.paper-page--back-cover {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.22), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.06)),
+    linear-gradient(160deg, #302219, var(--cover-bg, #74351f));
+}
+
+.paper-cover-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.paper-cover-title,
+.paper-cover-subtitle {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+}
+
+.paper-cover-title {
+  color: var(--cover-fg, #f6efe4);
+  font-size: clamp(1.6rem, 5vw, 2.9rem);
+  line-height: 1.05;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.45);
+}
+
+.paper-cover-subtitle {
+  color: var(--cover-accent, #d8b36a);
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+  line-height: 1.25;
+}
+
+.paper-page--inside-cover {
+  background:
+    radial-gradient(ellipse at 22% 18%, rgba(100, 55, 26, 0.08), transparent 15%),
+    linear-gradient(95deg, rgba(87, 57, 32, 0.13), transparent 13%, transparent 88%, rgba(80, 49, 27, 0.12)),
+    #e5d2aa;
 }
 
 .paper-content > *:first-child {
@@ -521,6 +586,10 @@ a {
   }
 
   .book-flip {
+    width: min(100%, var(--page-width));
+  }
+
+  .book-flip--single {
     width: min(100%, var(--page-width));
   }
 

@@ -16,9 +16,11 @@ let onSpreadMediaChange: ((event: MediaQueryListEvent) => void) | undefined
 
 const pages = computed(() => data.value?.pages ?? [])
 const bookTitle = computed(() => data.value?.book?.title ?? 'Livre')
+const bookCover = computed(() => data.value?.book?.cover)
 const {
   currentIndex,
   currentPage,
+  coverState,
   isSpreadMode,
   visiblePages,
   readerProgressLabel,
@@ -28,6 +30,9 @@ const {
   goNext,
   goPrevious
 } = useBookReader(pages)
+const readerFrameLabel = computed(() => readerProgressLabel.value
+  ? `${bookTitle.value}. ${readerProgressLabel.value}`
+  : bookTitle.value)
 
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'ArrowRight' || event.key === 'PageDown') {
@@ -63,7 +68,7 @@ onBeforeUnmount(() => {
       ← Catalogue
     </NuxtLink>
 
-    <section class="reader-frame" :aria-label="`${bookTitle}. ${readerProgressLabel}`" aria-live="polite">
+    <section class="reader-frame" :aria-label="readerFrameLabel" aria-live="polite">
       <div v-if="error" class="reader-state" role="alert">
         Pages introuvables.
       </div>
@@ -74,7 +79,11 @@ onBeforeUnmount(() => {
 
       <BookPageFlip
         v-else
+        :book-cover="bookCover"
+        :book-title="bookTitle"
+        :cover-state="coverState"
         :current-index="currentIndex"
+        :is-spread-mode="isSpreadMode"
         :pages="pages"
         :visible-pages="visiblePages"
         @page-change="goToPage"

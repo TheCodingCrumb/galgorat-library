@@ -1,4 +1,5 @@
 import { computed, ref, watch, type ComputedRef } from 'vue'
+import type { CoverState } from './usePhysicalBookPages'
 
 export interface BookPage {
   pageNumber: number
@@ -17,11 +18,22 @@ export interface BookPayload {
   book?: {
     slug: string
     title: string
-    cover: string
+    cover: string | BookCoverConfig
     description: string
   }
   pages: BookPage[]
   warnings: string[]
+}
+
+export interface BookCoverConfig {
+  image?: string
+  frontImage?: string
+  backImage?: string
+  background?: string
+  foreground?: string
+  accent?: string
+  title?: string
+  subtitle?: string
 }
 
 export interface VisiblePage {
@@ -87,6 +99,7 @@ export function getVisiblePagesForIndex(
 
 export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
   const currentIndex = ref(0)
+  const coverState = ref<CoverState | null>('front')
   const isSpreadMode = ref(false)
 
   const totalPages = computed(() => pages.value.length)
@@ -99,6 +112,10 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
   ))
 
   const readerProgressLabel = computed(() => {
+    if (coverState.value) {
+      return ''
+    }
+
     const visiblePageNumbers = visiblePages.value
       .map((page) => page.page?.pageNumber)
       .filter((pageNumber): pageNumber is number => typeof pageNumber === 'number')
@@ -112,10 +129,20 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
       : `Pages ${visiblePageNumbers.join(' et ')} sur ${totalPages.value}`
   })
 
-  const canGoPrevious = computed(() => currentIndex.value > 0)
-  const canGoNext = computed(() => {
-    if (totalPages.value === 0) {
+  const canGoPrevious = computed(() => {
+    if (coverState.value === 'front') {
       return false
+    }
+
+    return currentIndex.value > 0
+  })
+  const canGoNext = computed(() => {
+    if (totalPages.value === 0 || coverState.value === 'back') {
+      return false
+    }
+
+    if (coverState.value === 'front') {
+      return true
     }
 
     if (!isSpreadMode.value || currentIndex.value === 0) {
@@ -133,14 +160,31 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
     return getSpreadStart(index)
   }
 
-  function goToPage(nextIndex: number) {
+  function goToPage(nextIndex: number | null, nextCoverState: CoverState | null = null) {
+    if (nextCoverState) {
+      coverState.value = nextCoverState
+      currentIndex.value = nextCoverState === 'back' && totalPages.value > 0
+        ? totalPages.value - 1
+        : 0
+      return
+    }
+
+    if (nextIndex === null) {
+      return
+    }
+
     const normalizedIndex = normalizeIndex(nextIndex)
 
     if (
       normalizedIndex < 0
       || normalizedIndex >= totalPages.value
-      || normalizedIndex === currentIndex.value
     ) {
+      return
+    }
+
+    coverState.value = null
+
+    if (normalizedIndex === currentIndex.value) {
       return
     }
 
@@ -149,6 +193,12 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
 
   function goNext() {
     if (!canGoNext.value) {
+      return
+    }
+
+    if (coverState.value === 'front') {
+      coverState.value = null
+      currentIndex.value = 0
       return
     }
 
@@ -162,6 +212,11 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
       return
     }
 
+    if (coverState.value === 'back') {
+      coverState.value = null
+      return
+    }
+
     goToPage(isSpreadMode.value && currentIndex.value > 1
       ? currentSpreadStart.value - 2
       : currentIndex.value - 1)
@@ -170,6 +225,7 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
   watch(totalPages, (nextTotal) => {
     if (nextTotal === 0) {
       currentIndex.value = 0
+      coverState.value = null
       return
     }
 
@@ -187,6 +243,7 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
   return {
     currentIndex,
     currentPage,
+    coverState,
     isSpreadMode,
     visiblePages,
     readerProgressLabel,
