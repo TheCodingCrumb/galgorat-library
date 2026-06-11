@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
         @page-change="goToPage"
       />
 
-      <nav class="reader-nav" aria-label="Navigation pages">
+      <nav class="reader-nav reader-nav--sr-only" aria-label="Navigation pages">
         <button
           type="button"
           class="nav-button"

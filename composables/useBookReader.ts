@@ -134,7 +134,7 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
       return false
     }
 
-    return currentIndex.value > 0
+    return totalPages.value > 0
   })
   const canGoNext = computed(() => {
     if (totalPages.value === 0 || coverState.value === 'back') {
@@ -146,10 +146,10 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
     }
 
     if (!isSpreadMode.value || currentIndex.value === 0) {
-      return currentIndex.value < totalPages.value - 1
+      return true
     }
 
-    return currentSpreadStart.value + 2 < totalPages.value
+    return true
   })
 
   function normalizeIndex(index: number) {
@@ -202,9 +202,16 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
       return
     }
 
-    goToPage(isSpreadMode.value && currentIndex.value > 0
+    const nextIndex = isSpreadMode.value && currentIndex.value > 0
       ? currentSpreadStart.value + 2
-      : currentIndex.value + 1)
+      : currentIndex.value + 1
+
+    if (nextIndex >= totalPages.value) {
+      goToPage(null, 'back')
+      return
+    }
+
+    goToPage(nextIndex)
   }
 
   function goPrevious() {
@@ -214,6 +221,11 @@ export function useBookReader(pages: ComputedRef<readonly BookPage[]>) {
 
     if (coverState.value === 'back') {
       coverState.value = null
+      return
+    }
+
+    if (currentIndex.value === 0) {
+      goToPage(null, 'front')
       return
     }
 

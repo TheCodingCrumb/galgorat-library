@@ -11,9 +11,12 @@ test('renders A5 page and visible controls', async ({ page }, testInfo) => {
   }
   await expect(papers.first()).toHaveClass(/paper-page--front-cover/)
   await expect(papers.first()).toHaveAttribute('aria-label', /Couverture Galgorat Library/)
-  await expect(page.getByRole('button', { name: 'Page suivante' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Page precedente' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Page precedente' })).toBeDisabled()
+  await expect(page.locator('.nav-button')).toHaveCount(2)
+  await expect(page.locator('.reader-nav')).toHaveClass(/reader-nav--sr-only/)
+  const navBox = await page.locator('.reader-nav').boundingBox()
+  expect(navBox).not.toBeNull()
+  expect(navBox!.width).toBeLessThanOrEqual(1)
+  expect(navBox!.height).toBeLessThanOrEqual(1)
   await expect(page.locator('.reader-count')).toHaveCount(0)
   await expect(page.locator('.paper-footer')).toHaveCount(0)
   await expect(page.locator('body')).not.toContainText(/\d+\s*\/\s*\d+/)
@@ -32,7 +35,7 @@ test('desktop navigation opens a two-page journal spread', async ({ page }, test
   const firstPageBox = await page.locator('.paper-page:visible').boundingBox()
   expect(firstPageBox).not.toBeNull()
 
-  await page.getByRole('button', { name: 'Page suivante' }).click()
+  await page.locator('.paper-page--front-cover:visible').click({ position: { x: 500, y: 720 } })
   await page.waitForTimeout(900)
 
   const papers = page.locator('.paper-page:visible')
@@ -61,10 +64,19 @@ test('desktop navigation opens a two-page journal spread', async ({ page }, test
     expect(check.overflow).toBe(false)
   }
 
-  await page.getByRole('button', { name: 'Page suivante' }).click()
+  await page.keyboard.press('ArrowRight')
   await page.waitForTimeout(900)
   await expect(page.locator('.paper-page:visible').first()).toContainText(/L.archive basse/)
   await expect(page.locator('.paper-page:visible').nth(1)).toContainText('La carte fendue')
+
+  await page.keyboard.press('ArrowLeft')
+  await page.waitForTimeout(900)
+  await expect(page.locator('.paper-page:visible').first()).toHaveClass(/paper-page--inside-cover/)
+  await expect(page.locator('.paper-page:visible').nth(1)).toContainText('Ouverture')
+
+  await page.keyboard.press('ArrowLeft')
+  await page.waitForTimeout(900)
+  await expect(page.locator('.paper-page--front-cover:visible')).toHaveCount(1)
 })
 
 test('mobile navigation keeps a single readable page', async ({ page }, testInfo) => {
@@ -73,7 +85,7 @@ test('mobile navigation keeps a single readable page', async ({ page }, testInfo
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/books/galgorat')
 
-  await page.getByRole('button', { name: 'Page suivante' }).click()
+  await page.keyboard.press('ArrowRight')
   await page.waitForTimeout(900)
 
   await expect(page.locator('.paper-page:visible')).toHaveCount(1)
@@ -94,7 +106,13 @@ test('keyboard navigation and reduced motion keep reader usable', async ({ page 
 
   await page.keyboard.press('ArrowLeft')
   await expect(page.locator('.paper-page:visible')).toHaveCount(1)
-  await expect(page.locator('.paper-page:visible')).toContainText('Ouverture')
+  await expect(page.locator('.paper-page--front-cover:visible')).toHaveCount(1)
+
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await expect(page.locator('.paper-page--back-cover:visible')).toHaveCount(1)
 })
 
 test('last spread remains stable at the end of the book', async ({ page }, testInfo) => {
@@ -103,22 +121,28 @@ test('last spread remains stable at the end of the book', async ({ page }, testI
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto('/books/galgorat')
 
-  const next = page.getByRole('button', { name: 'Page suivante' })
-  await next.click()
-  await next.click()
-  await next.click()
-  await expect(next).toBeDisabled()
+  await expect(page.locator('.paper-page--front-cover:visible')).toHaveCount(1)
+
+  await page.keyboard.press('ArrowRight')
+  await page.waitForTimeout(900)
+  await expect(page.locator('.paper-page:visible').nth(1)).toContainText('Ouverture')
+
+  await page.keyboard.press('ArrowRight')
+  await page.waitForTimeout(900)
+  await expect(page.locator('.paper-page:visible').first()).toContainText(/L.archive basse/)
+
+  await page.keyboard.press('ArrowRight')
+  await page.waitForTimeout(900)
 
   const papers = page.locator('.paper-page:visible')
   await expect(papers).toHaveCount(2)
   await expect(papers.first()).toContainText(/Le serment du passeur/)
   await expect(papers.nth(1)).toContainText(/L.encre des ruines/)
 
-  await page.mouse.click(1160, 70)
+  await page.keyboard.press('ArrowRight')
   await page.waitForTimeout(900)
-  await expect(page.locator('.paper-page:visible')).toHaveCount(2)
-  await expect(page.locator('.paper-page:visible').first()).toHaveClass(/paper-page--blank-content/)
-  await expect(page.locator('.paper-page:visible').nth(1)).toHaveClass(/paper-page--inside-cover/)
+  await expect(page.locator('.paper-page:visible')).toHaveCount(1)
+  await expect(page.locator('.paper-page--back-cover:visible')).toHaveCount(1)
 })
 
 test('catalog links to the generated book route', async ({ page }) => {

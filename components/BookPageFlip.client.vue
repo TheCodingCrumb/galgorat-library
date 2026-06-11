@@ -67,7 +67,7 @@ const targetPhysicalIndex = computed(() => {
   }
 
   if (props.coverState === 'back') {
-    return 2 + props.pages.length + (props.pages.length % 2 === 1 ? 1 : 0)
+    return Math.max(0, physicalPages.value.length - 1)
   }
 
   return contentIndexToPageFlipIndex(props.currentIndex, props.isSpreadMode)
@@ -361,6 +361,25 @@ watch(() => props.coverState, () => {
         v-if="getCoverImage('front')"
         class="paper-cover-image"
         :src="getCoverImage('front')"
+        alt=""
+      >
+      <template v-else>
+        <strong class="paper-cover-title">{{ coverConfig.title ?? bookTitle }}</strong>
+        <span v-if="coverConfig.subtitle" class="paper-cover-subtitle">
+          {{ coverConfig.subtitle }}
+        </span>
+      </template>
+    </article>
+    <article
+      v-else-if="coverState === 'back'"
+      class="paper-page paper-page--cover paper-page--back-cover"
+      :style="getCoverStyle()"
+      :aria-label="`Quatrieme de couverture ${bookTitle}`"
+    >
+      <img
+        v-if="getCoverImage('back')"
+        class="paper-cover-image"
+        :src="getCoverImage('back')"
         alt=""
       >
       <template v-else>

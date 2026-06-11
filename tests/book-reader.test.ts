@@ -75,6 +75,38 @@ describe('useBookReader', () => {
 
     expect(reader.visiblePages.value).toHaveLength(2)
     expect(reader.readerProgressLabel.value).toBe('Pages 2 et 3 sur 3')
+    expect(reader.canGoNext.value).toBe(true)
+  })
+
+  it('can return to the front cover from the first content page', () => {
+    const pages = ref(bookPages)
+    const reader = useBookReader(computed(() => pages.value))
+
+    reader.goNext()
+    expect(reader.coverState.value).toBeNull()
+    expect(reader.currentPage.value).toEqual(bookPages[0])
+    expect(reader.canGoPrevious.value).toBe(true)
+
+    reader.goPrevious()
+    expect(reader.coverState.value).toBe('front')
+    expect(reader.currentIndex.value).toBe(0)
+    expect(reader.readerProgressLabel.value).toBe('')
+  })
+
+  it('can advance from the last content page to the back cover', () => {
+    const pages = ref(bookPages)
+    const reader = useBookReader(computed(() => pages.value))
+
+    reader.goNext()
+    reader.goNext()
+    reader.goNext()
+    expect(reader.currentPage.value).toEqual(bookPages[2])
+    expect(reader.canGoNext.value).toBe(true)
+
+    reader.goNext()
+    expect(reader.coverState.value).toBe('back')
+    expect(reader.currentIndex.value).toBe(2)
+    expect(reader.readerProgressLabel.value).toBe('')
     expect(reader.canGoNext.value).toBe(false)
   })
 
