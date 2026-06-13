@@ -144,7 +144,7 @@ function createCoverPageElement(kind: 'front-cover' | 'back-cover') {
   return article
 }
 
-function createBlankPageElement(kind: 'inside-front' | 'blank-after-content' | 'inside-back') {
+function createBlankPageElement(kind: 'inside-front' | 'blank-after-content' | 'inside-back' | 'content') {
   const article = document.createElement('article')
   article.className = [
     'paper-page',
@@ -210,7 +210,7 @@ async function mountFlip() {
   host.className = 'page-flip-host'
   flipMount.value.appendChild(host)
 
-  const module = await import('page-flip') as { PageFlip: PageFlipConstructor }
+  const module = await import('page-flip') as unknown as { PageFlip: PageFlipConstructor }
   const instance = new module.PageFlip(host, {
     width: 560,
     height: 795,
